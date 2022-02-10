@@ -3,7 +3,7 @@ from django.test import Client, TestCase
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 
-from ..models import Post, Group
+from ..models import Post
 from ..forms import PostForm
 
 User = get_user_model()
