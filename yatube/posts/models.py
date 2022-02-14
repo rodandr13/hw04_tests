@@ -16,9 +16,6 @@ class Group(models.Model):
 
 
 class Post(models.Model):
-    class Meta:
-        ordering = ['-pub_date']
-
     text = models.TextField(
         verbose_name='Пост',
         help_text='Введите текст поста',
@@ -42,6 +39,9 @@ class Post(models.Model):
         verbose_name='Группа',
         help_text='Выберите группу',
     )
+    
+    class Meta:
+        ordering = ['-pub_date']
 
     def __str__(self):
         return self.text[:15]

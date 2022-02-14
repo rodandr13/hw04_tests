@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+from django.urls import reverse
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
@@ -26,26 +27,47 @@ class StaticPageURLTesting(TestCase):
 
     def setUp(self):
         self.guest_client = Client()
-        self.user = StaticPageURLTesting.user
         self.authorized_client = Client()
-        self.authorized_client.force_login(self.user)
+        self.authorized_client.force_login(StaticPageURLTesting.user)
         cache.clear()
 
     def test_urls_uses_correct_template_guest_users(self):
-        templates_url_names = {
-            'posts/index.html': '/',
-            'posts/group_list.html': '/group/test-slug/',
-            'posts/profile.html': '/profile/auth/',
-            'posts/post_detail.html': '/posts/1/',
-        }
-        for template, address in templates_url_names.items():
-            with self.subTest(address=address):
-                response = self.guest_client.get(address)
-                self.assertTemplateUsed(response, template)
+        page_urls = [
+            reverse('posts:index'),
+            reverse('posts:group_list', kwargs={'slug': self.group.slug}),
+            reverse('posts:profile', kwargs={'username': self.user}),
+            reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
+        ]
+        page_templates = [
+            'posts/index.html',
+            'posts/group_list.html',
+            'posts/profile.html',
+            'posts/post_detail.html',
+        ]
+        for url in page_urls:
+            with self.subTest(address=url):
+                response = self.guest_client.get(url)
+                self.assertTemplateUsed(
+                    response,
+                    page_templates[page_urls.index(url)]
+                )
 
     def test_urls_uses_correct_template_auth_user(self):
-        response = self.authorized_client.get('/create/')
-        self.assertTemplateUsed(response, 'posts/create_post.html')
+        page_urls = [
+            reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
+            reverse('posts:post_create'),
+        ]
+        page_templates = [
+            'posts/create_post.html',
+            'posts/create_post.html',
+        ]
+        for url in page_urls:
+            with self.subTest(address=url):
+                response = self.authorized_client.get(url)
+                self.assertTemplateUsed(
+                    response,
+                    page_templates[page_urls.index(url)]
+                )
 
     def test_urls_uses_correct_template_edit_author(self):
         author = StaticPageURLTesting.post.author
@@ -54,12 +76,20 @@ class StaticPageURLTesting(TestCase):
 
     def test_urls_exists_at_desired_location(self):
         url_status_codes = {
-            '/': 200,
-            '/group/test-slug/': 200,
-            '/profile/auth/': 200,
-            '/posts/1/': 200,
-            '/create/': 302,
-            '/posts/1/edit/': 302,
+            reverse('posts:index'): HTTPStatus.OK,
+            reverse(
+                'posts:group_list',
+                kwargs={'slug': 'test-slug'}): HTTPStatus.OK,
+            reverse(
+                'posts:profile',
+                kwargs={'username': self.user}): HTTPStatus.OK,
+            reverse(
+                'posts:post_detail',
+                kwargs={'post_id': self.post.id}): HTTPStatus.OK,
+            reverse(
+                'posts:post_edit',
+                kwargs={'post_id': self.post.id}): HTTPStatus.FOUND,
+            reverse('posts:post_create'): HTTPStatus.FOUND,
         }
         for url, code in url_status_codes.items():
             with self.subTest(url=url):

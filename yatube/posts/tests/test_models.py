@@ -13,48 +13,52 @@ class PostModelTest(TestCase):
         cls.user = User.objects.create_user(username='auth')
         cls.group = Group.objects.create(
             title='Заголовок тестовой группы',
-            slug='test-slug',
             description='Тестовое описание',
+            slug='test-slug',
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовая группа',
+            text='Описание тестовое в посте',
         )
 
-    def test_str_for_post(self):
-        post = PostModelTest.post
-        post_str = post.__str__()[:15]
-        expected_object_name = post.text
-        self.assertEqual(post_str, expected_object_name)
-
-    def test_str_for_group(self):
-        group = PostModelTest.group
-        group_str = group.__str__()
-        expected_object_name = group.title
-        self.assertEqual(group_str, expected_object_name)
+    def test_str_for_post_and_group(self):
+        models = (
+            PostModelTest.post,
+            PostModelTest.group
+        )
+        expect = [
+            self.post.text[:15],
+            self.group.title
+        ]
+        for value in models:
+            with self.subTest(field=value):
+                self.assertEqual(
+                    str(value),
+                    expect[models.index(value)]
+                )
 
     def test_verbose(self):
         post = PostModelTest.post
-        field_verbose = {
-            'text': 'Пост',
-            'pub_date': 'Дата публикации',
-            'author': 'Автор',
-            'group': 'Группа',
-        }
-        for field, expected_value in field_verbose.items():
-            with self.subTest(field=field):
+        field_verbose = (
+            ('text', 'Пост'),
+            ('pub_date', 'Дата публикации'),
+            ('author', 'Автор'),
+            ('group', 'Группа'),
+        )
+        for value, expect in field_verbose:
+            with self.subTest(field=value):
                 self.assertEqual(
-                    post._meta.get_field(field).verbose_name,
-                    expected_value
+                    post._meta.get_field(value).verbose_name,
+                    expect
                 )
 
     def test_help_text(self):
         post = PostModelTest.post
-        field_help_text = {
-            'text': 'Введите текст поста',
-            'group': 'Выберите группу',
-        }
-        for field, expected_value in field_help_text.items():
+        field_help_text = (
+            ('text', 'Введите текст поста'),
+            ('group', 'Выберите группу'),
+        )
+        for field, expected_value in field_help_text:
             with self.subTest(field=field):
                 self.assertEqual(
                     post._meta.get_field(field).help_text,
