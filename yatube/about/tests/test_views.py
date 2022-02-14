@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+
 class AboutPagesTest(TestCase):
     @classmethod
     def setUpClass(cls):
