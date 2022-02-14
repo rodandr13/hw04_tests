@@ -39,7 +39,7 @@ class Post(models.Model):
         verbose_name='Группа',
         help_text='Выберите группу',
     )
-    
+
     class Meta:
         ordering = ['-pub_date']
 
