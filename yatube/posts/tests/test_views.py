@@ -3,8 +3,6 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.core.cache import cache
 
-from itertools import islice
-
 from ..models import Post, Group
 from ..forms import PostForm
 
