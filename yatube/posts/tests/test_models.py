@@ -23,19 +23,12 @@ class PostModelTest(TestCase):
 
     def test_str_for_post_and_group(self):
         models = (
-            PostModelTest.post,
-            PostModelTest.group
+            (PostModelTest.post, self.post.text[:15]),
+            (PostModelTest.group, self.group.title),
         )
-        expect = [
-            self.post.text[:15],
-            self.group.title
-        ]
-        for value in models:
+        for value, expect in models:
             with self.subTest(field=value):
-                self.assertEqual(
-                    str(value),
-                    expect[models.index(value)]
-                )
+                self.assertEqual(str(value), expect)
 
     def test_verbose(self):
         post = PostModelTest.post

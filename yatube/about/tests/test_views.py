@@ -10,7 +10,6 @@ class AboutPagesTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create(username='TestUser')
 
     def setUp(self):
         self.guest_client = Client()

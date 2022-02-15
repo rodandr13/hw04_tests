@@ -58,29 +58,23 @@ class PostPagesTest(TestCase):
         return values
 
     def test_pages_uses_correct_template(self):
-        page_urls = [
-            reverse('posts:index'),
-            reverse('posts:group_list', kwargs={'slug': self.post.group.slug}),
-            reverse('posts:profile', kwargs={'username': self.user}),
-            reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
-            reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
-            reverse('posts:post_create'),
-        ]
-        page_templates = [
-            'posts/index.html',
-            'posts/group_list.html',
-            'posts/profile.html',
-            'posts/post_detail.html',
-            'posts/create_post.html',
-            'posts/create_post.html',
-        ]
-        for url in page_urls:
+        page_urls = (
+            (reverse('posts:index'), 'posts/index.html'),
+            (reverse('posts:group_list',
+                     kwargs={'slug': self.post.group.slug}),
+             'posts/group_list.html'),
+            (reverse('posts:profile', kwargs={'username': self.user}),
+             'posts/profile.html'),
+            (reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
+             'posts/post_detail.html'),
+            (reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
+             'posts/create_post.html'),
+            (reverse('posts:post_create'), 'posts/create_post.html'),
+        )
+        for url, expect in page_urls:
             with self.subTest(reverse_name=url):
                 response = self.authorized_client.get(url)
-                self.assertTemplateUsed(
-                    response,
-                    page_templates[page_urls.index(url)]
-                )
+                self.assertTemplateUsed(response, expect)
 
     def test_index_page_show_correct_context(self):
         response = self.authorized_client.get(reverse('posts:index'))
@@ -178,8 +172,7 @@ class PaginatorViewsTest(TestCase):
             author=cls.user,
             group=cls.group) for i in range(batch_size)
         )
-        batch = list(islice(posts, batch_size))
-        Post.objects.bulk_create(batch, batch_size)
+        Post.objects.bulk_create(posts, batch_size)
 
     def setUp(self):
         self.authorized_client = Client()
@@ -188,33 +181,25 @@ class PaginatorViewsTest(TestCase):
 
     def test_paginator_first_pages(self):
         pages = (
-            self.authorized_client.get(reverse('posts:index')),
-            self.authorized_client.get(reverse(
-                'posts:profile', kwargs={'username': self.user}
-            )),
-            self.authorized_client.get(reverse(
-                'posts:group_list', kwargs={'slug': self.group.slug}
-            ))
+            reverse('posts:index'),
+            reverse('posts:profile', kwargs={'username': self.user}),
+            reverse('posts:group_list', kwargs={'slug': self.group.slug})
         )
         for value in pages:
             with self.subTest(value=value):
-                self.assertEqual(len(value.context['page_obj']), 10)
+                response = self.authorized_client.get(value)
+                self.assertEqual(len(response.context['page_obj']), 10)
 
     def test_paginator_second_pages(self):
         pages = (
-            self.authorized_client.get(
-                reverse('posts:index'),
-                {'page': '2'}
-            ),
-            self.authorized_client.get(
-                reverse('posts:profile', kwargs={'username': self.user}),
-                {'page': '2'}
-            ),
-            self.authorized_client.get(
-                reverse('posts:group_list', kwargs={'slug': self.group.slug}),
-                {'page': '2'}
-            )
+            (reverse('posts:index'),
+             {'page': '2'}),
+            (reverse('posts:profile', kwargs={'username': self.user}),
+             {'page': '2'}),
+            (reverse('posts:group_list', kwargs={'slug': self.group.slug}),
+             {'page': '2'}),
         )
-        for value in pages:
+        for value, args in pages:
             with self.subTest(value=value):
-                self.assertEqual(len(value.context['page_obj']), 7)
+                response = self.authorized_client.get(value, args)
+                self.assertEqual(len(response.context['page_obj']), 7)

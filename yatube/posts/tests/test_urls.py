@@ -32,42 +32,32 @@ class StaticPageURLTesting(TestCase):
         cache.clear()
 
     def test_urls_uses_correct_template_guest_users(self):
-        page_urls = [
-            reverse('posts:index'),
-            reverse('posts:group_list', kwargs={'slug': self.group.slug}),
-            reverse('posts:profile', kwargs={'username': self.user}),
-            reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
-        ]
-        page_templates = [
-            'posts/index.html',
-            'posts/group_list.html',
-            'posts/profile.html',
-            'posts/post_detail.html',
-        ]
-        for url in page_urls:
+        pages = (
+            (reverse('posts:index'),
+             'posts/index.html'),
+            (reverse('posts:group_list', kwargs={'slug': self.group.slug}),
+             'posts/group_list.html'),
+            (reverse('posts:profile', kwargs={'username': self.user}),
+             'posts/profile.html'),
+            (reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
+             'posts/post_detail.html'),
+        )
+        for url, expect in pages:
             with self.subTest(address=url):
                 response = self.guest_client.get(url)
-                self.assertTemplateUsed(
-                    response,
-                    page_templates[page_urls.index(url)]
-                )
+                self.assertTemplateUsed(response, expect)
 
     def test_urls_uses_correct_template_auth_user(self):
-        page_urls = [
-            reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
-            reverse('posts:post_create'),
-        ]
-        page_templates = [
-            'posts/create_post.html',
-            'posts/create_post.html',
-        ]
-        for url in page_urls:
+        page_urls = (
+            (reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
+             'posts/create_post.html'),
+            (reverse('posts:post_create'),
+             'posts/create_post.html'),
+        )
+        for url, expect in page_urls:
             with self.subTest(address=url):
                 response = self.authorized_client.get(url)
-                self.assertTemplateUsed(
-                    response,
-                    page_templates[page_urls.index(url)]
-                )
+                self.assertTemplateUsed(response, expect)
 
     def test_urls_uses_correct_template_edit_author(self):
         author = StaticPageURLTesting.post.author

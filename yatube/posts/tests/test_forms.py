@@ -52,7 +52,7 @@ class PostCreateFormTest(TestCase):
             'posts:profile',
             kwargs={'username': self.user}
         ))
-        last_post = Post.objects.get(id=Post.objects.count())
+        last_post = Post.objects.order_by('pub_date').last()
         self.assertEqual(last_post.text, form_data['text'])
         self.assertEqual(last_post.group.id, form_data['group'])
         self.assertEqual(Post.objects.count(), post_count + 1)
@@ -68,12 +68,12 @@ class PostCreateFormTest(TestCase):
             data=form_data,
             follow=True,
         )
-        edited_text = Post.objects.get(id=self.post.id).text
-        edited_group = Post.objects.get(id=self.post.id).group
-        self.assertEqual(form_data['text'], edited_text)
-        self.assertEqual(self.other_group, edited_group)
         self.assertRedirects(response, reverse(
             'posts:post_detail',
             kwargs={'post_id': self.post.id}
         ))
+        edited_text = Post.objects.get(id=self.post.id).text
+        edited_group = Post.objects.get(id=self.post.id).group
+        self.assertEqual(form_data['text'], edited_text)
+        self.assertEqual(self.other_group, edited_group)
         self.assertEqual(Post.objects.count(), post_count)
