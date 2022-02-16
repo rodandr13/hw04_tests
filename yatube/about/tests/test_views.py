@@ -7,10 +7,6 @@ User = get_user_model()
 
 
 class AboutPagesTest(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-
     def setUp(self):
         self.guest_client = Client()
         cache.clear()

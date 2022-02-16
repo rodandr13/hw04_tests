@@ -72,8 +72,7 @@ class PostCreateFormTest(TestCase):
             'posts:post_detail',
             kwargs={'post_id': self.post.id}
         ))
-        edited_text = Post.objects.get(id=self.post.id).text
-        edited_group = Post.objects.get(id=self.post.id).group
-        self.assertEqual(form_data['text'], edited_text)
-        self.assertEqual(self.other_group, edited_group)
+        post = Post.objects.get(id=self.post.id)
+        self.assertEqual(form_data['text'], post.text)
+        self.assertEqual(self.other_group, post.group)
         self.assertEqual(Post.objects.count(), post_count)
