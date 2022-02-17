@@ -1,14 +1,23 @@
+import shutil
+import tempfile
+
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.core.cache import cache
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 
 from ..models import Post, Group
 from ..forms import PostForm
 
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
+
 User = get_user_model()
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostPagesTest(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -24,11 +33,30 @@ class PostPagesTest(TestCase):
             slug='other-slug',
             description='Тестовое описание',
         )
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовый пост',
             group=cls.group,
+            image=uploaded,
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.authorized_client = Client()
@@ -37,14 +65,15 @@ class PostPagesTest(TestCase):
         cache.clear()
 
     def get_post_field_values(self, response, object):
-        values = ()
         if object == 'page_obj':
             first_page_object = response.context[object][0]
             values = (
                 (first_page_object.text, self.post.text),
                 (first_page_object.author, self.post.author),
                 (first_page_object.group, self.post.group),
+                (first_page_object.image, self.post.image),
             )
+            return values
         elif object == 'post':
             first_page_object = response.context[object]
             values = (
@@ -52,8 +81,9 @@ class PostPagesTest(TestCase):
                 (first_page_object.author, self.post.author),
                 (first_page_object.group, self.post.group),
                 (first_page_object.id, self.post.id),
+                (first_page_object.image, self.post.image),
             )
-        return values
+            return values
 
     def test_pages_uses_correct_template(self):
         page_urls = (
@@ -89,7 +119,6 @@ class PostPagesTest(TestCase):
         for value, expect in post_values:
             with self.subTest(value=value):
                 self.assertEqual(value, expect)
-
         group_object = response.context['group']
         self.assertEqual(group_object.description, self.group.description)
         self.assertEqual(group_object.title, self.group.title)
@@ -122,7 +151,7 @@ class PostPagesTest(TestCase):
         other_group = Group.objects.filter(slug=self.other_group.slug)
         response_index = self.authorized_client.get(reverse('posts:index'))
         response_profile = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': self.user})
+            reverse('posts:profile', kwargs={'username': self.user.username})
         )
         response_group = self.authorized_client.get(
             reverse('posts:group_list', kwargs={'slug': self.group.slug})

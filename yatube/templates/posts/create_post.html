@@ -18,7 +18,7 @@
                 {% endfor %}
               {% endfor %}
             {% endif %}
-            <form method="post"
+            <form method="post" enctype="multipart/form-data"
                   action="{% if is_edit %} {% url 'posts:post_edit' post.pk %} {% else %} {% url 'posts:post_create' %} {% endif %}">
               {% csrf_token %}
               <div class="form-group row my-3 p-3">
@@ -40,6 +40,9 @@
                   {{ form.group.help_text }}
                 </small>
               </div>
+            <div class="form-group row my-3 p-3">
+              {{ form.image }}
+            </div>
 
               <div class="d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary">

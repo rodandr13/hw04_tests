@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load thumbnail %}
 {% block h1 %}Последние обновления на сайте{% endblock %}
 {% block content %}
   {% for post in page_obj %}
@@ -12,6 +13,9 @@
           Дата публикации: {{ post.pub_date|date:"d E Y" }}
         </li>
       </ul>
+      {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+        <img class="my-2" src="{{ im.url }}">
+      {% endthumbnail %}
       <p>{{ post.text }}</p>
       <a href="{% url 'posts:post_detail' post.pk %}">подробная информация</a>
     </article>
