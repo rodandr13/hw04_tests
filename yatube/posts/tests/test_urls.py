@@ -28,7 +28,7 @@ class StaticPageURLTesting(TestCase):
     def setUp(self):
         self.guest_client = Client()
         self.authorized_client = Client()
-        self.authorized_client.force_login(StaticPageURLTesting.user)
+        self.authorized_client.force_login(self.user)
         cache.clear()
 
     def test_urls_uses_correct_template_guest_users(self):

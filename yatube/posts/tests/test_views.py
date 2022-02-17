@@ -60,9 +60,7 @@ class PostPagesTest(TestCase):
 
     def setUp(self):
         self.authorized_client = Client()
-        self.test_client = Client()
         self.authorized_client.force_login(self.user)
-        cache.clear()
 
     def get_post_field_values(self, response, object):
         if object == 'page_obj':
@@ -133,7 +131,7 @@ class PostPagesTest(TestCase):
             with self.subTest(value=value):
                 self.assertEqual(value, expect)
         author_object = response.context['author']
-        self.assertEqual(author_object, self.post.author)
+        self.assertEqual(author_object, self.user)
 
     def test_post_detail_page_show_correct_context(self):
         response = self.authorized_client.get(
@@ -181,6 +179,13 @@ class PostPagesTest(TestCase):
         self.assertTrue(response.context['is_edit'])
         self.assertIsInstance(response.context['is_edit'], bool)
 
+    def test_cache_for_index_page(self):
+        response = self.authorized_client.get(reverse('posts:index'))
+        Post.objects.all().delete()
+        response_after_del = self.authorized_client.get(reverse('posts:index'))
+        self.assertEqual(response.content,
+                         response_after_del.content)
+
 
 class PaginatorViewsTest(TestCase):
     @classmethod
@@ -195,7 +200,7 @@ class PaginatorViewsTest(TestCase):
 
         batch_size = 17
         posts = (Post(
-            text='Пост № %s' % i,
+            text=f'Пост № {i}',
             author=cls.user,
             group=cls.group) for i in range(batch_size)
         )
