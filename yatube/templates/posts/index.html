@@ -3,8 +3,9 @@
 
 {% block h1 %}Последние обновления на сайте{% endblock %}
 {% block content %}
+  {% include 'posts/includes/switcher.html' %}
   {% load cache %}
-  {% cache 500 index_page %}
+  {% cache 20 index_page %}
     {% for post in page_obj %}
       <article>
         <ul>
