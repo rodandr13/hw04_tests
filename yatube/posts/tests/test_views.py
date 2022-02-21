@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 
-from ..models import Post, Group
+from ..models import Post, Group, Follow
 from ..forms import PostForm
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
@@ -23,6 +23,8 @@ class PostPagesTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create(username='TestUser')
+        cls.other_user = User.objects.create(username='OtherUser')
+        cls.author = User.objects.create_user('TestAuthor')
         cls.group = Group.objects.create(
             title='Заголовок тестовой группы',
             slug='test-slug',
@@ -61,6 +63,9 @@ class PostPagesTest(TestCase):
     def setUp(self):
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+        self.authorized_other_client = Client()
+        self.authorized_other_client.force_login(self.other_user)
+        cache.clear()
 
     def get_post_field_values(self, response, object):
         if object == 'page_obj':
@@ -185,6 +190,41 @@ class PostPagesTest(TestCase):
         response_after_del = self.authorized_client.get(reverse('posts:index'))
         self.assertEqual(response.content,
                          response_after_del.content)
+
+    def test_profile_follow_unfollow(self):
+        follow_author_before = self.user.follower.filter(
+            author=self.author).count()
+        Follow.objects.create(
+            user=self.user,
+            author=self.author
+        )
+        follow_author_after = self.user.follower.filter(
+            author=self.author).count()
+        self.assertEqual(
+            follow_author_after,
+            follow_author_before + 1
+        )
+        following_author = self.user.follower.filter(author=self.author)
+        following_author.delete()
+        self.assertEqual(
+            follow_author_before,
+            follow_author_after - 1
+        )
+
+    def test_post_for_followers(self):
+        self.post = Post.objects.create(
+            author=self.author,
+            text='Пост для фолловеров',
+        )
+        Follow.objects.create(
+            user=self.user,
+            author=self.author
+        )
+        response = self.authorized_client.get(
+            reverse('posts:follow_index')).context['page_obj']
+        response_other_user = self.authorized_other_client.get(
+            reverse('posts:follow_index')).context['page_obj']
+        self.assertNotEqual(len(response), len(response_other_user))
 
 
 class PaginatorViewsTest(TestCase):

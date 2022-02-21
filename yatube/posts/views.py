@@ -3,6 +3,7 @@ from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import cache_page
 
+
 from itertools import chain
 
 from .models import Post, Group, User, Comment, Follow
@@ -11,6 +12,7 @@ from .forms import PostForm, CommentForm
 COUNT_ELEMS = 10
 
 
+@cache_page(20)
 def index(request):
     template = 'posts/index.html'
     post_list = Post.objects.all()
@@ -119,11 +121,7 @@ def add_comment(request, post_id):
 @login_required
 def follow_index(request):
     template = 'posts/follow.html'
-    follow_list = Follow.objects.filter(user=request.user)
-    author_list = []
-    for follow in follow_list:
-        author_list.append(follow.author)
-    post_list = Post.objects.filter(author__in=author_list)
+    post_list = Post.objects.filter(author__following__user=request.user)
     paginator = Paginator(post_list, COUNT_ELEMS)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
